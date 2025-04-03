@@ -6,11 +6,28 @@ def decode_adeunis(base64_payload):
     bytes_pos = 1
     payload = {}
 
+    # 📦 Métadonnées sur le décodeur et l'appareil
+    payload["decoder_metadata"] = {
+        "decoder_version": "1.0.0",
+        "description": "FieldTest",
+        "company": "Adeunis",
+        "model": "ARF8123AA",
+        "field_structure": {
+            0: {"name": "temperature", "type": "int", "unit": "°C"},
+            1: {"name": "trigger", "type": "string", "value": "accelerometer"},
+            2: {"name": "trigger", "type": "string", "value": "pushbutton"},
+            3: {"name": "gps", "fields": ["latitude", "longitude", "sats", "hdop", "gps_quality"]},
+            4: {"name": "ul_counter", "type": "int"},
+            5: {"name": "dl_counter", "type": "int"},
+            6: {"name": "battery_level", "type": "int", "unit": "mV"},
+            7: {"name": "downlink", "fields": ["rssi_dl", "snr_dl"], "unit": "dB"}
+        }
+    }
+
     def parse_coordinate(raw_value, coordinate):
         raw_itude = raw_value
         temp = ""
 
-        # Degree section
         itude_string = str((raw_itude >> 28) & 0xF)
         raw_itude <<= 4
         itude_string += str((raw_itude >> 28) & 0xF)
@@ -18,7 +35,6 @@ def decode_adeunis(base64_payload):
         coordinate["degrees"] += itude_string
         itude_string += "°"
 
-        # Minute section
         temp = str((raw_itude >> 28) & 0xF)
         raw_itude <<= 4
         temp += str((raw_itude >> 28) & 0xF)
@@ -27,7 +43,6 @@ def decode_adeunis(base64_payload):
         itude_string += "."
         coordinate["minutes"] += temp
 
-        # Decimal section
         temp = str((raw_itude >> 28) & 0xF)
         raw_itude <<= 4
         temp += str((raw_itude >> 28) & 0xF)
@@ -117,12 +132,18 @@ def decode_adeunis(base64_payload):
         i += 1
 
     payload["raw_payload"] = ''.join(f"{b:02X}" for b in bytes_)
+
+    # 📋 Log de debug console (optionnel)
+    print("\n=== Decoder Metadata ===")
+    for k, v in payload["decoder_metadata"].items():
+        print(f"{k}: {v}")
+
     return payload
 
 
-# 🔍 Exemple d’utilisation :
+# 🔍 Exemple d’utilisation
 if __name__ == "__main__":
-    payload = "nhhGRokAAGOVYBbSCBBq"  # frm_payload reçu
+    payload = "nhhGRokAAGOVYBbSCBBq"  # Exemple base64
     result = decode_adeunis(payload)
     from pprint import pprint
     pprint(result)
